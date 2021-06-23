@@ -2,6 +2,7 @@ import { GetStaticProps } from 'next';
 import Prismic from '@prismicio/client';
 import { ReactElement, useState } from 'react';
 import { FiCalendar, FiUser } from 'react-icons/fi';
+import Link from 'next/link';
 
 import Header from '../components/Header';
 
@@ -63,24 +64,26 @@ export default function Home({ postsPagination }: HomeProps): ReactElement {
     <>
       <Header />
       <div className={commonStyles.container}>
-        <ul className={styles.postsWrapper}>
+        <div className={styles.postsWrapper}>
           {posts.map(post => (
-            <li key={post.uid} className={styles.post}>
-              <strong>{post.data.title}</strong>
-              <p>{post.data.subtitle}</p>
-              <div className={styles.postDetails}>
-                <div className={styles.field}>
-                  <FiCalendar color="#bbbbbb" size={20} />
-                  <span>{post.first_publication_date}</span>
-                </div>
-                <div className={styles.field}>
-                  <FiUser color="#bbbbbb" size={20} />
-                  <span>{post.data.author}</span>
+            <Link key={post.uid} href={`/post/${post.uid}`}>
+              <div className={styles.post}>
+                <strong>{post.data.title}</strong>
+                <p>{post.data.subtitle}</p>
+                <div className={styles.postDetails}>
+                  <div className={styles.field}>
+                    <FiCalendar color="#bbbbbb" size={20} />
+                    <span>{post.first_publication_date}</span>
+                  </div>
+                  <div className={styles.field}>
+                    <FiUser color="#bbbbbb" size={20} />
+                    <span>{post.data.author}</span>
+                  </div>
                 </div>
               </div>
-            </li>
+            </Link>
           ))}
-        </ul>
+        </div>
 
         {nextPage && (
           <button

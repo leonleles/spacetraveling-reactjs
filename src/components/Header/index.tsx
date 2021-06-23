@@ -7,7 +7,7 @@ export default function Header(): ReactElement {
   return (
     <div className={styles.headerWrapper}>
       <div className={stylesCommon.container}>
-        <img src="logo.png" alt="logo" />
+        <img src="/logo.png" alt="logo" />
       </div>
     </div>
   );
