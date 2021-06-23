@@ -25,7 +25,7 @@ interface Post {
       heading: string;
       body: {
         text: string;
-      };
+      }[];
     }[];
   };
 }
@@ -34,18 +34,21 @@ interface PostProps {
   post: Post;
 }
 
-export default function Post({ post }: PostProps): ReactElement {
+export default function Post({ post }: PostProps): JSX.Element {
   const router = useRouter();
 
   if (router.isFallback) {
-    return <div>Loading...</div>;
+    return <div>Carregando...</div>;
   }
 
   const readingTime = post.data.content.reduce((time, obj) => {
     const { body } = obj;
-    const bodyWords = body.text.split(' ');
 
-    return time + bodyWords.length;
+    const numWords = body.reduce((val, obj2) => {
+      return val + obj2.text.split(' ').length;
+    }, 0);
+
+    return time + numWords;
   }, 0);
 
   return (
@@ -65,7 +68,7 @@ export default function Post({ post }: PostProps): ReactElement {
           <div className={styles.postDetails}>
             <div className={styles.field}>
               <FiCalendar color="#bbbbbb" size={20} />
-              <span>{post.first_publication_date}</span>
+              <span>{dateToBr(new Date(post.first_publication_date))}</span>
             </div>
             <div className={styles.field}>
               <FiUser color="#bbbbbb" size={20} />
@@ -78,11 +81,16 @@ export default function Post({ post }: PostProps): ReactElement {
           </div>
 
           <article>
-            {post.data.content.map(content => {
+            {post.data.content.map((content, index) => {
               return (
-                <div key={content.heading} className={styles.group}>
+                <div key={String(index)} className={styles.group}>
                   <strong>{content.heading}</strong>
-                  <p>{content.body.text}</p>
+                  <p
+                    className={styles.postContent}
+                    dangerouslySetInnerHTML={{
+                      __html: RichText.asHtml(content.body),
+                    }}
+                  />
                 </div>
               );
             })}
@@ -107,8 +115,8 @@ export const getStaticPaths: GetStaticPaths = async () => {
   });
 
   return {
-    paths, // quais posts devem gerar durante a build array({slug})
-    fallback: 'blocking',
+    paths, // quais posts deve
+    fallback: true,
   };
 };
 
@@ -116,28 +124,24 @@ export const getStaticProps: GetStaticProps = async context => {
   const { slug } = context.params;
   const prismic = getPrismicClient();
   const response = await prismic.getByUID('posts', String(slug), {});
-  const { data } = response;
-
-  const contents = data.content.map(item => {
-    return {
-      heading: item.heading,
-      body: {
-        text: RichText.asText(item.body),
-      },
-    };
-  });
 
   const post = {
-    first_publication_date: response.last_publication_date
-      ? dateToBr(new Date(response.last_publication_date))
-      : null,
+    uid: response.uid,
+    first_publication_date: response.first_publication_date,
+    last_publication_date: response.last_publication_date,
     data: {
-      title: data.title,
+      title: response.data.title,
+      subtitle: response.data.subtitle,
+      author: response.data.author,
       banner: {
-        url: data.banner?.url || '',
+        url: response.data.banner.url,
       },
-      author: data.author,
-      content: contents,
+      content: response.data.content.map(content => {
+        return {
+          heading: content.heading,
+          body: [...content.body],
+        };
+      }),
     },
   };
 
@@ -145,5 +149,6 @@ export const getStaticProps: GetStaticProps = async context => {
     props: {
       post,
     },
+    revalidate: 60 * 30, // 30 minutos
   };
 };
